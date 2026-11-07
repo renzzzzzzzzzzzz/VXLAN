@@ -1,0 +1,123 @@
+@NXOS-JP --
+conf t
+ hostname NexusJP
+ int lo1
+ ip add 1.1.1.1/32
+ feature bgp
+ feature ospf
+ feature interface-vlan
+ feature nv overlay
+ feature vn-segment-vlan-based
+ system jumbomtu 9216
+ copy run start
+exit
+
+@NXOS-PH --
+conf t
+ hostname NexusPH
+ int lo2
+ ip add 2.2.2.2/32
+ feature bgp
+ feature ospf
+ feature interface-vlan
+ feature nv overlay
+ feature vn-segment-vlan-based
+ system jumbomtu 9216
+ copy run start
+exit
+
+@NXOS-JP --
+conf t
+router ospf 10
+int e1/1 
+ no switchport
+ ip add 100.1.1.1/30
+ ip router ospf 10 area 0
+ no shut
+exit
+
+int loopback 0
+ ip add 10.10.10.10/32
+ ip router ospf 10 area 0
+ exit
+
+vlan 50
+ vn-segment 5000
+ exit
+
+int eth 1/5-6
+ switchport access vlan 50
+ exit
+
+Interface Nve 1
+ no shutdown
+source-interface loopback 0
+ member vni 5000
+  ingress-replication protocol static
+  peer-ip 20.20.20.20
+end
+
+@NXOS PH --
+conf t
+router ospf 10
+int e1/1 
+ no switchport
+ ip add 100.1.1.2/30
+ ip router ospf 10 area 0
+ no shut
+exit
+
+int loopback 0
+ ip add 20.20.20.20/32
+ ip router ospf 10 area 0
+ exit
+
+vlan 50
+ vn-segment 5000
+ exit
+
+int eth 1/5-6
+ switchport access vlan 50
+ exit
+
+Interface Nve 1
+ no shutdown
+source-interface loopback 0
+ member vni 5000
+  ingress-replication protocol static
+  peer-ip 10.10.10.10
+end
+
+sh nve vni
+
+@R1(JP)
+conf t
+ hostname R1-JP
+ int g0/0
+ no shut
+ ip add 50.0.0.1 255.0.0.0
+end
+
+@R3(PH)
+conf t
+ hostname R3-PH
+ int g0/0
+ no shut
+ ip add 50.0.0.3 255.0.0.0
+end
+
+@R2(JP)
+conf t
+ hostname R2-JP
+ int g0/0
+ no shut
+ ip add 50.0.0.2 255.0.0.0
+end
+
+@R4(JP)
+conf t
+ hostname R4-JP
+ int g0/0
+ no shut
+ ip add 50.0.0.4 255.0.0.0
+end
